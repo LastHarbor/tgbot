@@ -7,10 +7,7 @@ using tgbot;
 
 var botclient = new TelegramBotClient(API.BotToken);
 using var cts = new CancellationTokenSource();
-var receiverOptions = new ReceiverOptions
-{
-    AllowedUpdates = { }
-};
+var receiverOptions = new ReceiverOptions();
 var path = @"C:\TelegramFiles";
 botclient.StartReceiving(HandleUpdatesMessagesAsync, HandleErrorAsync,
     receiverOptions,
@@ -22,32 +19,58 @@ Console.WriteLine($"Начал прослушку : {me.Username}");
 Console.ReadLine();
 cts.Cancel();
 
+
 async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
     var message = update.Message;
-    var chatId = message.Chat.Id;
+    var chatId = message!.Chat.Id;
     
-    Console.WriteLine($"Получено сообщение: ({message.Text}) от {chatId} - {message.Chat.Username}");
-    
-    if (message?.Text !=null)
+    Console.WriteLine($"$Получено сообщение - {message.Text} от {chatId} - {message.Chat.Username} ");
+
+    if (message.Text == "/upload")
     {
+        await botclient.SendTextMessageAsync(chatId, "Начните отправлять файлы");
+    }
+    if (message.ReplyToMessage != null && message.ReplyToMessage.Text!.Contains("Начните отправлять файлы") )
+    {
+        switch (message.Type)
+        {
+            case MessageType.Document:
+                Console.WriteLine($"Получен документ от {message.Chat.Id} - {message.Chat.Username}");
+                await UploadDocuments(message);
+                Console.WriteLine($"Документ успешно сохранен ");
+                await botclient.SendTextMessageAsync(chatId, "Файл успешно схранен");
+                break;
+            case MessageType.Video:
+                Console.WriteLine($"Получено видео от {message.Chat.Id} - {message.Chat.Username}");
+                await UploadVideo(message);
+                Console.WriteLine($"Видео успешно сохранено ");
+                await botclient.SendTextMessageAsync(chatId, "Файл успешно схранен");
+                break;
+            case MessageType.Voice:
+                Console.WriteLine($"Получен войс от {message.Chat.Id} - {message.Chat.Username}");
+                await UploadVoice(message);
+                Console.WriteLine($"Войс успешно сохранен ");
+                await botclient.SendTextMessageAsync(chatId, "Файл успешно схранен");
+                break;
+            case MessageType.Audio:
+                Console.WriteLine($"Получено аудио от {message.Chat.Id} - {message.Chat.Username}");
+                await UploadAudio(message);
+                Console.WriteLine($"Аудио успешно сохранен ");
+                await botclient.SendTextMessageAsync(chatId, "Файл успешно схранен");
+                break;
+        }
     }
 
-    if (message?.Text == "Файлы")
+    if (message.Text == "/dwnld")
     {
-        GetFilesOnDirectory(botclient, message);
+        await GetFilesOnDirectory(botclient, message);
     }
-    if (message.Type == MessageType.Document)
-    {
-        Console.WriteLine($"Получен документ {message.Document} от {message.Chat.Id} - {message.Chat.Username}");
-        await DownloadDocuments(botclient, message);
-        Console.WriteLine($"Документ успешно сохранен ");
-    }
-    
 }
 
 Task HandleErrorAsync (ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
+    Newtonsoft.Json.JsonConvert.SerializeObject(exception);
     var errorMessage = exception switch
     {
         ApiRequestException apiRequestException =>
@@ -58,28 +81,61 @@ Task HandleErrorAsync (ITelegramBotClient botClient, Exception exception, Cancel
     return Task.CompletedTask;
 }
 
-async Task DownloadDocuments(TelegramBotClient botClient, Message message)
+async Task UploadDocuments(Message message)
 {
-    
     var fileId = message.Document?.FileId;
-    var file = await botclient.GetFileAsync(fileId);
-    var filePath = file.FilePath;
+    await botclient.GetFileAsync(fileId ?? string.Empty);
     if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-    string destanationPath = $@"{path}\{message.Document.FileName}";
+    string destanationPath = $@"{path}\{message.Document?.FileName}";
 
     await using (FileStream fstream = new FileStream(destanationPath, FileMode.OpenOrCreate))
     {
-        file = await botclient.GetInfoAndDownloadFileAsync(fileId, fstream);
+        await botclient.GetInfoAndDownloadFileAsync(fileId ?? string.Empty, fstream);
+    }
+}
+async Task UploadVideo(Message message)
+{
+    var fileId = message.Video?.FileId;
+    await botclient!.GetFileAsync(fileId!);
+    if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+    string destanationPath = $@"{path}\{message.Video?.FileName}";
+
+    await using (FileStream fstream = new FileStream(destanationPath, FileMode.OpenOrCreate))
+    {
+        await botclient.GetInfoAndDownloadFileAsync(fileId, fstream);
+    }
+}
+async Task UploadVoice(Message message)
+{
+    var fileId = message.Voice?.FileId;
+    await botclient!.GetFileAsync(fileId!);
+    if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+    string destanationPath = $@"{path}\{message.Voice}";
+
+    await using (FileStream fstream = new FileStream(destanationPath, FileMode.OpenOrCreate))
+    {
+        await botclient.GetInfoAndDownloadFileAsync(fileId, fstream);
+    }
+}
+async Task UploadAudio(Message message)
+{
+    var fileId = message.Audio?.FileId;
+    await botclient!.GetFileAsync(fileId!);
+    if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+    string destanationPath = $@"{path}\{message.Audio?.FileName}";
+
+    await using (FileStream fstream = new FileStream(destanationPath, FileMode.OpenOrCreate))
+    {
+        await botclient.GetInfoAndDownloadFileAsync(fileId, fstream);
     }
 }
 
 async Task GetFilesOnDirectory(TelegramBotClient botClient, Message ms)
 {
-    List<string> FileList = new List<string>();
-    var Files = Directory.GetFiles(path);
-    var fileNames = String.Format($"{Files}");
-    await botclient.SendTextMessageAsync(ms.Chat.Id, $"{fileNames}");
-    
+    Directory
+        .GetFiles(path, "*", SearchOption.AllDirectories)
+        .ToList()
+        .ForEach(async f => await botclient.SendTextMessageAsync(ms.Chat.Id, Path.GetFileName(f)));
 }
 
 
