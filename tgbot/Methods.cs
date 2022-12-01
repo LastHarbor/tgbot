@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace tgbot;
 
@@ -96,12 +97,29 @@ public class Methods
    /// <param name="ms"></param>
    /// <param name="path"></param>
    /// <returns></returns>
-  public static Task GetFilesOnDirectory(TelegramBotClient botClient, Message ms, string path)
+  public static Task GetFiles(TelegramBotClient botClient, Message ms, string path)
   {
       Directory
             .GetFiles(path, "*", SearchOption.AllDirectories)
             .ToList()
             .ForEach( f => botClient.SendTextMessageAsync(ms.Chat.Id, Path.GetFileName(f)));
+      
       return Task.CompletedTask;
   }
+
+   public static InlineKeyboardButton[][] GetKeyboard(string[] array)
+   {
+       var keyboardInline = new InlineKeyboardButton[1][];
+       var keyboardButtons = new InlineKeyboardButton[array.Length];
+       for (var i = 0; i < array.Length; i++)
+       {
+           keyboardButtons[i] = new InlineKeyboardButton(String.Empty)
+           {
+               Text = $"{array[i]}\n",
+               CallbackData = "Some Callback Data",
+           };
+       }
+       keyboardInline[0] = keyboardButtons;
+       return keyboardInline;
+   }
 }
