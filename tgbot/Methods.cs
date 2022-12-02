@@ -117,14 +117,17 @@ public class Methods
         return Task.CompletedTask;
     }
 
-    public async static Task GetFile(string path, string file, TelegramBotClient botClient, Message message)
+    // public async static Task GetFile(string path, string file, TelegramBotClient botClient, Message message)
+    // {
+    //     await using Stream stream = System.IO.File.OpenRead(path);
+    //     await botClient.SendDocumentAsync(message.Chat.Id, new InputOnlineFile(stream, file));
+    //
+    // }
+
+    public static async Task SendFile()
     {
-        await using Stream stream = System.IO.File.OpenRead(path);
-        await botClient.SendDocumentAsync(message.Chat.Id, new InputOnlineFile(stream, file));
-
+        
     }
-
-    
 
     // public static InlineKeyboardButton[][] GetKeyboard(List<string> array)
     // {
