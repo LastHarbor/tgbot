@@ -26,14 +26,15 @@ async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update updat
 {
     var message = update.Message;
     var chatId = message!.Chat.Id;
-    
+
     Console.WriteLine($"$Получено сообщение - {message.Text} от {chatId} - {message.Chat.Username} ");
 
     if (message.Text == "/upload")
     {
         await botclient.SendTextMessageAsync(chatId, "Начните отправлять файлы");
     }
-    if (message.ReplyToMessage != null && message.ReplyToMessage.Text!.Contains("Начните отправлять файлы") )
+
+    if (message.ReplyToMessage != null && message.ReplyToMessage.Text!.Contains("Начните отправлять файлы"))
     {
         switch (message.Type)
         {
@@ -54,21 +55,24 @@ async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update updat
 
     if (message.Text == "/dwnld")
     {
-        var files = Directory.GetFiles(path, "*");
-        
-        var keyboardMarkup = new InlineKeyboardMarkup(Methods.GetKeyboard(files));
-        await botclient.SendTextMessageAsync(chatId, "Списков файлов:", replyMarkup: keyboardMarkup);
-    }
-    if (message.ReplyToMessage != null && message.ReplyToMessage.Text!.Contains("Ответитьте на это это сообщение имененм скопированного файла"))
-    {
-        if (message.Text!=null)
-        {
-            
-            
-        }
-        }
+        await botclient.SendTextMessageAsync(chatId, "Списков файлов:");
+        await Methods.GetFiles(botclient, message, path);
+        await botclient.SendTextMessageAsync(chatId, "Ответитьте на это это сообщение имененм скопированного файла");
     }
 
+    if (message.ReplyToMessage != null &&
+        message.ReplyToMessage.Text!.Contains("Ответитьте на это это сообщение имененм скопированного файла"))
+        switch (message.Type)
+        {
+            case MessageType.Text:
+                var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+                foreach (var file in files)
+                {
+                    if (message.Text == file)  await Methods.GetFile(files, file, botclient, message);
+                }
+                break;
+        }
+}
 
 Task HandleErrorAsync (ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
