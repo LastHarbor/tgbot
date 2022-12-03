@@ -1,7 +1,5 @@
-using System.Net.Mime;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace tgbot;
@@ -113,7 +111,6 @@ public class Methods
             .GetFiles(path, "*", SearchOption.AllDirectories)
             .ToList()
             .ForEach(f => botClient.SendTextMessageAsync(ms.Chat.Id, Path.GetFileName(f)));
-
         return Task.CompletedTask;
     }
 
@@ -145,13 +142,13 @@ public class Methods
     //     keyboardInline[0] = keyboardButtons;
     //     return keyboardInline;
     // }
-    // public static InlineKeyboardButton[][] GetKeyboard(List<string> array,int buttonsPerRow = 0)
-    // {
-    //     var s = array.ToString();
-    //     var data = array.Select(x => InlineKeyboardButton.WithCallbackData(s));
-    //     if (buttonsPerRow == 0)
-    //         return new InlineKeyboardButton[][] { data.ToArray() };
-    //
-    //     else return data.Chunk(buttonsPerRow).Select(c => c.ToArray()).ToArray();
-    //  }
+     public static InlineKeyboardMarkup GetKeyboard(string[] array,int buttonsPerRow = 0)
+     {
+         var s = array.ToString();
+         var data = array.Select(x => InlineKeyboardButton.WithCallbackData(s));
+         if (buttonsPerRow == 0)
+             return new InlineKeyboardButton[][] { data.ToArray() };
+    
+         else return data.Chunk(buttonsPerRow).Select(c => c.ToArray()).ToArray();
+      }
  }

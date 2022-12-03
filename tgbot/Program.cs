@@ -52,14 +52,16 @@ async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update updat
 
     if (message.Text == "/dwnld")
     {
-        await botclient.SendTextMessageAsync(chatId, "Списков файлов:");
-        await Methods.GetFiles(botclient, message, path);
-        await botclient.SendTextMessageAsync(chatId, "Ответьте на это сообщение именем скопированного файла");
+        var files = Directory.GetFiles(path)
+            .Select(Path.GetFileName).ToArray();
+        await botclient.SendTextMessageAsync(chatId, "Списков файлов:", 
+            replyMarkup:  Methods.GetKeyboard(files!));
+        //await botclient.SendTextMessageAsync(chatId, "Ответьте на это сообщение именем скопированного файла");
     }
-            await using Stream str = File.OpenRead(path + message.Text);
-            InputOnlineFile iof = new InputOnlineFile(str);                                                     // ALREADY WORKS
-            iof.FileName = message.Text;
-            await botclient.SendDocumentAsync(chatId, iof);
+    await using Stream str = File.OpenRead(path + message.Text);
+    InputOnlineFile iof = new InputOnlineFile(str);                                                     // ALREADY WORKS
+    iof.FileName = message.Text;
+    await botclient.SendDocumentAsync(chatId, iof);
 }
 
 Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
