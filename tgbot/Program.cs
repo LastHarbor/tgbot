@@ -23,7 +23,7 @@ cts.Cancel();
 
 async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
-    var path = @"C:\TelegramFiles\";
+    var path = @"..\TelegramFiles\";
     var message = update.Message;
     var chatId = message!.Chat.Id;
 
