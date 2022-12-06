@@ -3,9 +3,8 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
+using Telegram.Bot.Types.ReplyMarkups;
 using tgbot;
-using File = System.IO.File;
 
 var botclient = new TelegramBotClient(API.BotToken);
 using CancellationTokenSource cts = new();
@@ -23,9 +22,12 @@ cts.Cancel();
 
 async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
+
     var path = @"..\TelegramFiles\";
     var message = update.Message;
     var chatId = message!.Chat.Id;
+
+    if (!Directory.Exists(path)) Directory.CreateDirectory(path);
 
     Console.WriteLine($"$Получено сообщение - {message.Text} от {chatId} - {message.Chat.Username} ");
 
@@ -33,38 +35,40 @@ async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update updat
     {
         await botclient.SendTextMessageAsync(chatId, "Начните отправлять файлы ");
     }
-
     switch (message.Type)
     {
         case MessageType.Document:
-            await Methods.UploadDocuments(message, botclient, path);
+            await Methods.MessageTypes.UploadDocuments(message, botclient, path);
             break;
         case MessageType.Video:
-            await Methods.UploadVideo(message, botclient, path);
+            await Methods.MessageTypes.UploadVideo(message, botclient, path);
             break;
         case MessageType.Voice:
-            await Methods.UploadVoice(message, botclient, path);
+            await Methods.MessageTypes.UploadVoice(message, botclient, path);
             break;
         case MessageType.Audio:
-            await Methods.UploadAudio(botclient, message, path);
+            await Methods.MessageTypes.UploadAudio(botclient, message, path);
+            break;
+        case MessageType.Photo:
+            await botClient.SendTextMessageAsync(chatId, "Отправьте фотографию документом");
             break;
     }
+
+
 
     if (message.Text == "/dwnld")
     {
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
         var files = Directory.GetFiles(path)
             .Select(Path.GetFileName).ToArray();
-        await botclient.SendTextMessageAsync(chatId, "Списков файлов:", 
-            replyMarkup:  Methods.GetKeyboard(files!));
+        var keyboard = new InlineKeyboardMarkup(Methods.GetKeyboard(files!));
+        await botclient.SendTextMessageAsync(chatId, "Списков файлов:", replyMarkup: keyboard);
         //await botclient.SendTextMessageAsync(chatId, "Ответьте на это сообщение именем скопированного файла");
     }
-    await using Stream str = File.OpenRead(path + message.Text);
-    InputOnlineFile iof = new InputOnlineFile(str);                                                     // ALREADY WORKS
-    iof.FileName = message.Text;
-    await botclient.SendDocumentAsync(chatId, iof);
+
 }
 
-Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         Newtonsoft.Json.JsonConvert.SerializeObject(exception);
         var errorMessage = exception switch
@@ -76,4 +80,5 @@ Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, Cancell
         Console.WriteLine(errorMessage);
         return Task.CompletedTask;
     }
+
 
