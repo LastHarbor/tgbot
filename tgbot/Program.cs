@@ -59,11 +59,18 @@ async Task HandleUpdatesMessagesAsync(ITelegramBotClient botClient, Update updat
     if (message.Text == "/dwnld")
     {
         if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-        var files = Directory.GetFiles(path)
-            .Select(Path.GetFileName).ToArray();
-        var keyboard = new InlineKeyboardMarkup(Methods.GetKeyboard(files!));
-        await botclient.SendTextMessageAsync(chatId, "Списков файлов:", replyMarkup: keyboard);
-        //await botclient.SendTextMessageAsync(chatId, "Ответьте на это сообщение именем скопированного файла");
+        // var files = Directory.GetFiles(path)
+        //     .Select(Path.GetFileName).ToArray();
+       
+        //var keyboard = new InlineKeyboardMarkup(Methods.GetKeyboard(files!));
+        await botclient.SendTextMessageAsync(chatId, "Списков файлов:");
+        await  Methods.GetFiles(botclient, message, path);
+        await botclient.SendTextMessageAsync(chatId, "Ответьте на это сообщение именем скопированного файла");
+    }
+
+    if (message.ReplyToMessage != null&& message.ReplyToMessage.Text!.Contains("Ответьте на это сообщение именем скопированного файла"))
+    {
+       await Methods.SendFile(botclient, message, path);
     }
 
 }

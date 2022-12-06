@@ -47,13 +47,13 @@ public class Methods
 
         var keyboardInline = new InlineKeyboardButton[array.Length][];
 
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < array.Length; i++)
         {
             var keyboardButtons = new InlineKeyboardButton[1];
             keyboardButtons[0] = new InlineKeyboardButton(string.Empty)
             {
                 Text = array[i],
-                CallbackData = SendFile(botclient, recive, array[i]),
+                CallbackData = "some data",
             };
 
             keyboardInline[i] = keyboardButtons;
